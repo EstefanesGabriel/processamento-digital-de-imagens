@@ -1,12 +1,24 @@
+#===============================================================================
+# Projeto - Trabalho 3: Bloom.
+#-------------------------------------------------------------------------------
+# Universidade Tecnológica Federal do Paraná
+# Nomes:
+# Alexandre Alberto Menon - 2603403
+# Gabriel Rodrigues Estefanes - 2603446
+#===============================================================================
+
 import numpy as np
 import cv2
 import sys
 
-INPUT_IMAGE = 'GT2.BMP'
+#===============================================================================
+
+INPUT_IMAGE = './Wind Waker GC.bmp'
 BRIGHT = 1.5
 CONSTANT_GB = 0.3
-CONSTANT_BB = 0.2
+CONSTANT_BB = 0.3
 
+#===============================================================================
 
 def bright_pass(img):
     rows = img.shape[0]
@@ -21,6 +33,7 @@ def bright_pass(img):
 
     return img
 
+#-------------------------------------------------------------------------------
 
 def gaussian_blur(img):
     sigma = 1
@@ -46,6 +59,8 @@ def gaussian_blur(img):
 
     return img_out
 
+#-------------------------------------------------------------------------------
+
 def box_blur(img):
     kernel = 15
     img_out = cv2.blur(img, (kernel,kernel), cv2.BORDER_REFLECT)
@@ -69,6 +84,8 @@ def box_blur(img):
     
     return img_out
 
+#-------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     img = cv2.imread(INPUT_IMAGE, cv2.IMREAD_UNCHANGED)
     if img is None:
@@ -78,7 +95,6 @@ if __name__ == '__main__':
     img = img.reshape((img.shape[0], img.shape[1], img.shape[2]))
     img = img.astype(np.float32) / 255
 
-
     img_bp = bright_pass(img.copy())
     img_gb = gaussian_blur(img_bp.copy())
     img_bb = box_blur(img_bp.copy())
@@ -87,11 +103,8 @@ if __name__ == '__main__':
     cols = img.shape[1]
     channels = img.shape[2]
 
-
-
     img1 = img + img_gb * CONSTANT_GB
     img2 = img + img_bb * CONSTANT_BB
-
 
     for row in range(rows):
         for col in range(cols):
@@ -101,13 +114,15 @@ if __name__ == '__main__':
                 if img2[row][col][ch] > 1:
                     img2[row][col][ch] = 1
 
-    cv2.imwrite('bloom1-image.png', img1*255)
-    cv2.imshow('bloom1-image', (img1 * 255).astype(np.uint8))
-    cv2.imwrite('bloom2-image.png', img2*255)
-    cv2.imshow('bloom2-image', (img2 * 255).astype(np.uint8))
+    cv2.imwrite('bloomgb-image.png', img1*255)
+    # cv2.imshow('bloomgb-image', (img1 * 255).astype(np.uint8))
+    cv2.imwrite('bloombb-image.png', img2*255)
+    # cv2.imshow('bloombb-image', (img2 * 255).astype(np.uint8))
     # cv2.imwrite('bright-image.png', img_bp*255)
     # cv2.imshow('bright-image', (img_bp * 255).astype(np.uint8))
     # cv2.imwrite('gaussian-image.png', img_gb*255)
     # cv2.imshow('gaussian-image', (img_gb * 255).astype(np.uint8))
+    # cv2.imwrite('boxblur-image.png', img_bb*255)
+    # cv2.imshow('boxblur-image', (img_bb * 255).astype(np.uint8))
     cv2.waitKey()
     cv2.destroyAllWindows()
