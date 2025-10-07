@@ -1,9 +1,21 @@
+#===============================================================================
+# Projeto - Trabalho 4: Contagem de arroz.
+#-------------------------------------------------------------------------------
+# Universidade Tecnológica Federal do Paraná
+# Nomes:
+# Alexandre Alberto Menon - 2603403
+# Gabriel Rodrigues Estefanes - 2603446
+#===============================================================================
+
 import cv2
 import numpy as np
 
+#===============================================================================
 
 FATOR_DE_CALIBRAGEM = 1.042
 IMAGES = ['60.bmp', '82.bmp', '114.bmp', '150.bmp', '205.bmp']
+
+#===============================================================================
 
 def image_treatment (img):
     img_gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
@@ -22,6 +34,8 @@ def image_treatment (img):
     treated_img = (img_dilated * 255).astype(np.uint8)
 
     return treated_img
+
+#-------------------------------------------------------------------------------
 
 def rices_contour(treated_img):
     contours, _ = cv2.findContours(treated_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -49,16 +63,22 @@ def rices_contour(treated_img):
 
     return total_rice_count
 
+#-------------------------------------------------------------------------------
+
 def print_total_rices(total_rices):
     print(f"\n--------------------------------------------------")
     print(f"RESULTADO: {int(total_rices)} grãos de arroz contados.")
     print(f"--------------------------------------------------")
+
+#-------------------------------------------------------------------------------
 
 def main():
     for img in IMAGES:
         treated_img = image_treatment(img)
         total_rices = rices_contour(treated_img)
         print_total_rices(total_rices)
+
+#-------------------------------------------------------------------------------
 
 def find_best_calibre():
     totais = [60, 82, 114, 150, 205]
@@ -73,7 +93,7 @@ def find_best_calibre():
         calibragem = round(c/1000, 3)
         for img in IMAGES:
             treated_img = image_treatment(img)
-            total_rices = rices_contour(treated_img, calibragem)
+            total_rices = rices_contour(treated_img)
             print_total_rices(total_rices)
             desvio += abs(totais[i] - total_rices)
             i += 1
@@ -88,4 +108,8 @@ def find_best_calibre():
     print(melhor_calibragem)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    for img in IMAGES:
+        treated_img = image_treatment(img)
+        total_rices = rices_contour(treated_img)
+        print_total_rices(total_rices)
