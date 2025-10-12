@@ -75,14 +75,6 @@ def print_total_rices(total_rices):
 
 #-------------------------------------------------------------------------------
 
-def main():
-    for img in IMAGES:
-        treated_img = image_treatment(img)
-        total_rices = rices_contour(treated_img)
-        print_total_rices(total_rices)
-
-#-------------------------------------------------------------------------------
-
 if __name__ == "__main__":
     for img in IMAGES:
         treated_img = image_treatment(img)
