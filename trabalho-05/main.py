@@ -1,10 +1,22 @@
+#===============================================================================
+# Projeto - Trabalho 5: Chroma Key.
+#-------------------------------------------------------------------------------
+# Universidade Tecnológica Federal do Paraná
+# Nomes:
+# Alexandre Alberto Menon - 2603403
+# Gabriel Rodrigues Estefanes - 2603446
+#===============================================================================
+
 import numpy as np
 import cv2
 import os
 
+#===============================================================================
 
 IMAGES = ["0.bmp", "1.bmp", "2.bmp", "3.bmp", "4.bmp", "5.bmp", "6.bmp", "7.bmp", "8.bmp"]
 BACKGROUND = "astronaut.png"
+
+#===============================================================================
 
 def mask(img):
     r = img[:, :, 0]
@@ -16,6 +28,8 @@ def mask(img):
     binario = np.where(mask, 0, 1).astype(np.float32)
 
     return binario
+
+#-------------------------------------------------------------------------------
 
 def apply_image(img, mask, bg_path):
     bg = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
@@ -32,6 +46,8 @@ def apply_image(img, mask, bg_path):
     resultado = np.where(mask[..., None] == 0, bg, img)
 
     return resultado
+
+#-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     for bmp in IMAGES:
