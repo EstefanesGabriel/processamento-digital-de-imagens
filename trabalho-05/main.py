@@ -19,15 +19,15 @@ BACKGROUND = "astronaut.png"
 #===============================================================================
 
 def mask(img):
-    r = img[:, :, 0]
-    g = img[:, :, 1]
-    b = img[:, :, 2]
+    hls = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HLS)
+    lower_green = np.array([40, 50, 60])   # H, L, S
+    upper_green = np.array([75, 200, 255])
+    
+    mask = cv2.inRange(hls, lower_green, upper_green)
 
-    mask = (g > 0.3) & ((g - np.maximum(r, b)) > 0.1)
+    mask = np.where(mask[...] != 0, 1, 0)
 
-    binario = np.where(mask, 0, 1).astype(np.float32)
-
-    return binario
+    return mask
 
 #-------------------------------------------------------------------------------
 
@@ -37,15 +37,24 @@ def apply_image(img, mask, bg_path):
         print('Erro abrindo a imagem.\n')
         return
     bg = bg.reshape((bg.shape[0], bg.shape[1], bg.shape[2]))
-    bg = bg.astype(np.float32) / 255
 
     bg = cv2.resize(bg, (img.shape[1], img.shape[0]))
     if bg.shape[2] == 4:
         bg = bg[:, :, :3]
 
-    resultado = np.where(mask[..., None] == 0, bg, img)
+    bg_removed = np.where(mask[..., None] == 0, img, 0)
 
-    return resultado
+    img_float = bg_removed.astype(np.float32)
+    b, g, r = cv2.split(img_float)
+    spill_mask = (g > r * 1.2) & (g > b * 1.2)
+
+    g[spill_mask] *= 0.3
+
+    corrected = cv2.merge([b, g, r]).astype(np.uint8)
+
+    result = np.where(mask[..., None] == 0, corrected, bg)
+
+    return result
 
 #-------------------------------------------------------------------------------
 
@@ -57,7 +66,6 @@ if __name__ == "__main__":
             print('Erro abrindo a imagem.\n')
             break
         img = img.reshape((img.shape[0], img.shape[1], img.shape[2]))
-        img = img.astype(np.float32) / 255
         
         binario = mask(img.copy())
 
@@ -68,4 +76,4 @@ if __name__ == "__main__":
 
         out_path = os.path.join("resultados", (bmp.split('.')[0]) + '.png')
 
-        cv2.imwrite(out_path, (resultado * 255).astype(np.uint8))
+        cv2.imwrite(out_path, resultado)
