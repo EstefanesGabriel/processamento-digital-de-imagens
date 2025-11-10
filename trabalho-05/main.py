@@ -48,7 +48,9 @@ def apply_image(img, mask, bg_path):
     b, g, r = cv2.split(img_float)
     spill_mask = (g > r * 1.2) & (g > b * 1.2)
 
+    b[spill_mask] *= 0.3
     g[spill_mask] *= 0.3
+    r[spill_mask] *= 0.3
 
     corrected = cv2.merge([b, g, r]).astype(np.uint8)
 
