@@ -13,69 +13,80 @@ import os
 
 #===============================================================================
 
-IMAGES = ["0.bmp", "1.bmp", "2.bmp", "3.bmp", "4.bmp", "5.bmp", "6.bmp", "7.bmp", "8.bmp"]
-BACKGROUND = "astronaut.png"
+IMAGES = [
+    "img/0.bmp", 
+    "img/1.bmp", 
+    "img/2.bmp", 
+    "img/3.bmp", 
+    "img/4.bmp", 
+    "img/5.bmp", 
+    "img/6.bmp", 
+    "img/7.bmp", 
+    "img/8.bmp"
+]
+
+BACKGROUND = "background/astronaut.png"
 
 #===============================================================================
 
-def mask(img):
-    hls = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HLS)
-    lower_green = np.array([40, 50, 60])   # H, L, S
-    upper_green = np.array([75, 200, 255])
-    
-    mask = cv2.inRange(hls, lower_green, upper_green)
+def create_mask(img):
+    r = img[:, :, 0]
+    g = img[:, :, 1]
+    b = img[:, :, 2]
 
-    mask = np.where(mask[...] != 0, 1, 0)
+    green = 1 + np.maximum(b,r) - g
+    green = np.clip(green, 0.0, 1.0)
 
-    return mask
+    return green
 
 #-------------------------------------------------------------------------------
 
-def apply_image(img, mask, bg_path):
+def remove_green(img, mask):
+    alpha = cv2.normalize(mask, None, 0, 1, cv2.NORM_MINMAX) # type: ignore
+    alpha = np.clip(alpha * 1.5 - 0.5, 0, 1)
+
+    removed = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+    removed[:, :, 2] *= alpha
+    removed = cv2.cvtColor(removed, cv2.COLOR_HLS2BGR)
+
+    return alpha, removed
+
+#-------------------------------------------------------------------------------
+
+def apply_image(fg, mask, bg_path):
     bg = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
     if bg is None:
-        print('Erro abrindo a imagem.\n')
+        print("Erro abrindo a imagem de background.\n")
         return
     bg = bg.reshape((bg.shape[0], bg.shape[1], bg.shape[2]))
-
-    bg = cv2.resize(bg, (img.shape[1], img.shape[0]))
+    bg = cv2.resize(bg, (fg.shape[1], fg.shape[0]))
     if bg.shape[2] == 4:
         bg = bg[:, :, :3]
+    bg = bg.astype(np.float32) / 255
 
-    bg_removed = np.where(mask[..., None] == 0, img, 0)
-
-    img_float = bg_removed.astype(np.float32)
-    b, g, r = cv2.split(img_float)
-    spill_mask = (g > r * 1.2) & (g > b * 1.2)
-
-    b[spill_mask] *= 0.3
-    g[spill_mask] *= 0.3
-    r[spill_mask] *= 0.3
-
-    corrected = cv2.merge([b, g, r]).astype(np.uint8)
-
-    result = np.where(mask[..., None] == 0, corrected, bg)
+    result = (fg * mask[..., None]) + (bg * (1 - mask[..., None]))
 
     return result
 
 #-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    for bmp in IMAGES:
-        in_path = os.path.join("img", bmp)
+    if not os.path.exists("resultados"):
+        os.mkdir("resultados")
+    i = 0
+    for in_path in IMAGES:
         img = cv2.imread(in_path, cv2.IMREAD_UNCHANGED)
         if img is None:
-            print('Erro abrindo a imagem.\n')
+            print("Erro abrindo a imagem.\n")
             break
         img = img.reshape((img.shape[0], img.shape[1], img.shape[2]))
+        img = img.astype(np.float32) / 255
+
+        mask = create_mask(img.copy())
+        mask, fg = remove_green(img.copy(), mask)
+        result = apply_image(fg, mask, BACKGROUND)
+
+        out_path = os.path.join("resultados", str(i) + ".png")
+        cv2.imwrite(out_path, (result * 255).astype(np.uint8)) # type: ignore
         
-        binario = mask(img.copy())
-
-        bg_path = os.path.join("background", BACKGROUND)
-        resultado = apply_image(img.copy(), binario, bg_path)
-        if resultado is None:
-            break
-
-        out_path = os.path.join("resultados", (bmp.split('.')[0]) + '.png')
-
-        cv2.imwrite(out_path, resultado)
+        i += 1
