@@ -64,7 +64,7 @@ def apply_image(fg, mask, bg_path):
         bg = bg[:, :, :3]
     bg = bg.astype(np.float32) / 255
 
-    result = (fg * mask[..., None]) + (bg * (1 - mask[..., None]))
+    result = fg * mask[:, :, None] + (bg * (1 - mask[:, :, None]))
 
     return result
 
@@ -73,9 +73,8 @@ def apply_image(fg, mask, bg_path):
 if __name__ == "__main__":
     if not os.path.exists("resultados"):
         os.mkdir("resultados")
-    i = 0
-    for in_path in IMAGES:
-        img = cv2.imread(in_path, cv2.IMREAD_UNCHANGED)
+    for i in range(len(IMAGES)):
+        img = cv2.imread(IMAGES[i], cv2.IMREAD_UNCHANGED)
         if img is None:
             print("Erro abrindo a imagem.\n")
             break
@@ -88,5 +87,3 @@ if __name__ == "__main__":
 
         out_path = os.path.join("resultados", str(i) + ".png")
         cv2.imwrite(out_path, (result * 255).astype(np.uint8)) # type: ignore
-        
-        i += 1
