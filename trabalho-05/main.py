@@ -70,20 +70,64 @@ def apply_image(fg, mask, bg_path):
 
 #-------------------------------------------------------------------------------
 
+def ajustes(img):
+    if img is None:
+        return img
+
+    img = img.copy()
+    if img.ndim != 3 or img.shape[2] < 3:
+        return img
+
+    img_u8 = np.clip(img * 255.0, 0, 255).astype(np.uint8)
+    hls = cv2.cvtColor(img_u8, cv2.COLOR_BGR2HLS) 
+
+    h = hls[:, :, 0].astype(np.int16)
+    l = hls[:, :, 1].astype(np.float32)
+    s = hls[:, :, 2].astype(np.float32)
+
+    h_low, h_high = 35, 85    
+    s_min = 10               
+    l_min = 10               
+
+    mask = (h >= h_low) & (h <= h_high) & (s >= s_min) & (l >= l_min)
+
+    
+    s[mask] = s[mask] * 0  
+
+    hls_mod = np.stack([h.astype(np.uint8), np.clip(l, 0, 255).astype(np.uint8), np.clip(s, 0, 255).astype(np.uint8)], axis=2)
+    bgr_mod_u8 = cv2.cvtColor(hls_mod, cv2.COLOR_HLS2BGR)
+    bgr_mod = bgr_mod_u8.astype(np.float32) / 255.0
+
+    return bgr_mod
+
+#-------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     if not os.path.exists("resultados"):
         os.mkdir("resultados")
     for i in range(len(IMAGES)):
         img = cv2.imread(IMAGES[i], cv2.IMREAD_UNCHANGED)
         if img is None:
-            print("Erro abrindo a imagem.\n")
-            break
-        img = img.reshape((img.shape[0], img.shape[1], img.shape[2]))
+            print(f"Erro abrindo a imagem: {IMAGES[i]}\n")
+            continue
+
+        # garantir 3 canais válidos
+        if img.ndim == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        if img.shape[2] == 4:
+            img = img[:, :, :3]
         img = img.astype(np.float32) / 255
 
         mask = create_mask(img.copy())
-        mask, fg = remove_green(img.copy(), mask)
-        result = apply_image(fg, mask, BACKGROUND)
+        alpha, fg = remove_green(img.copy(), mask)
+
+        applied = apply_image(fg, alpha, BACKGROUND)
+        if applied is None:
+            print("Erro aplicando background. Pulando imagem.\n")
+            continue
+        result = applied  # desempacota o resultado correto
+
+        img_chr = ajustes(result)
 
         out_path = os.path.join("resultados", str(i) + ".png")
-        cv2.imwrite(out_path, (result * 255).astype(np.uint8)) # type: ignore
+        cv2.imwrite(out_path, (img_chr * 255).astype(np.uint8))
