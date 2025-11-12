@@ -70,7 +70,7 @@ def apply_image(fg, mask, bg_path):
 
 #-------------------------------------------------------------------------------
 
-def ajustes(img):
+def post_processing(img):
     if img is None:
         return img
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             continue
         result = applied  # desempacota o resultado correto
 
-        img_chr = ajustes(result)
+        img_chr = post_processing(result)
 
         out_path = os.path.join("resultados", str(i) + ".png")
         cv2.imwrite(out_path, (img_chr * 255).astype(np.uint8))
