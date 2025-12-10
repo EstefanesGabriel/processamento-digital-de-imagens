@@ -81,6 +81,35 @@ def k_means(img):
 
     return colored
 
+def blob_count(treated_img):
+    contours, _ = cv2.findContours(treated_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    areas = [cv2.contourArea(c) for c in contours]
+    return len(areas)
+
+def red_count(img):
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    areas = [cv2.contourArea(c) for c in contours]
+    areas.sort()
+    # limite_inferior = max(0, int(len(areas) * 0.2))
+    # limite_superior = max(limite_inferior + 1, int(len(areas) * 0.5))
+    # median_areas = areas[limite_inferior:limite_superior]
+
+    avg_red_area = np.mean(areas)
+
+    total_red_count = 0
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        count_in_contour = round(area / avg_red_area )
+        
+        if count_in_contour == 0 and area > avg_red_area * 0.5:
+            count_in_contour = 1
+            
+        total_red_count += count_in_contour
+
+    return total_red_count
+
 if __name__ == '__main__':
     if not os.path.exists("resultados"):
         os.mkdir("resultados")
@@ -114,14 +143,18 @@ if __name__ == '__main__':
         img_white_cell = cv2.dilate(img_eroded, kernel, iterations=25)
         img_platelet = mask - img_white_cell
 
-        img_platelet = cv2.dilate(img_platelet, kernel, iterations=15)
+        aux_platelet = cv2.dilate(img_platelet, kernel, iterations=15)
         filtered = cv2.cvtColor(filtered, cv2.COLOR_BGR2GRAY)
         filtered = np.where(filtered >= 25, 255, 0).astype(np.uint8)
 
-        filtered -= img_platelet
-        img_white_cell = cv2.dilate(img_white_cell, kernel, iterations=15)
-        filtered = np.where(img_white_cell[...] != 0, 0, filtered)
+        filtered -= aux_platelet
+        aux_white_cell = cv2.dilate(img_white_cell, kernel, iterations=15)
+        filtered = np.where(aux_white_cell[...] != 0, 0, filtered)
 
-        cv2.imshow('', filtered)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+        print("=======================")
+        print(f"Contagem da imagem {i}")
+        print("=======================")
+        print(f"Células brancas: {blob_count(img_white_cell)}")
+        print(f"Células vermelhas: {red_count(filtered)}")
+        print(f"Plaquetas: {blob_count(img_platelet)}")
+
