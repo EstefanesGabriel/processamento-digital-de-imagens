@@ -70,10 +70,10 @@ def k_means(img):
     labels_flat = labels.flatten()
 
     palette = np.array([
-        [255, 0, 0],      # cluster 0
-        [0, 255, 0],      # cluster 1
-        [0, 0, 255],      # cluster 2
-        [255, 255, 0]     # cluster 3
+        [255, 0, 0],      
+        [0, 255, 0],      
+        [0, 0, 255],      
+        [255, 255, 0]     
     ], dtype=np.uint8)
 
     colored = palette[labels_flat]
