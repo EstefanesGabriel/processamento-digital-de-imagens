@@ -92,9 +92,6 @@ def red_count(img):
 
     areas = [cv2.contourArea(c) for c in contours]
     areas.sort()
-    # limite_inferior = max(0, int(len(areas) * 0.2))
-    # limite_superior = max(limite_inferior + 1, int(len(areas) * 0.5))
-    # median_areas = areas[limite_inferior:limite_superior]
 
     avg_red_area = np.mean(areas)
 
@@ -125,8 +122,19 @@ if __name__ == '__main__':
         fg = remove_bg(img.copy())
 
         fg = np.clip(fg * 255, 0, 255).astype(np.uint8)
+
+        out_path = os.path.join("resultados", f"{i}_fg.png")
+        cv2.imwrite(out_path, fg)
+
         filtered = filter_cells(fg.copy())
+
+        out_path = os.path.join("resultados", f"{i}_filtered.png")
+        cv2.imwrite(out_path, filtered)
+
         out = k_means(filtered)
+
+        out_path = os.path.join("resultados", f"{i}_kmeans.png")
+        cv2.imwrite(out_path, out)
 
         b, g, _ = cv2.split(out)
         white = np.count_nonzero(b == 255)
@@ -146,10 +154,17 @@ if __name__ == '__main__':
         aux_platelet = cv2.dilate(img_platelet, kernel, iterations=15)
         filtered = cv2.cvtColor(filtered, cv2.COLOR_BGR2GRAY)
         filtered = np.where(filtered >= 25, 255, 0).astype(np.uint8)
-
         filtered -= aux_platelet
+
         aux_white_cell = cv2.dilate(img_white_cell, kernel, iterations=15)
         filtered = np.where(aux_white_cell[...] != 0, 0, filtered)
+
+        out_path = os.path.join("resultados", f"{i}_white_cell.png")
+        cv2.imwrite(out_path, img_white_cell)
+        out_path = os.path.join("resultados", f"{i}_red.png")
+        cv2.imwrite(out_path, filtered)
+        out_path = os.path.join("resultados", f"{i}_platelet.png")
+        cv2.imwrite(out_path, img_platelet)
 
         print("=======================")
         print(f"Contagem da imagem {i}")
